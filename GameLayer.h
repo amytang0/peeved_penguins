@@ -20,8 +20,12 @@ enum
     NSMutableArray *bullets;
     ContactListener *contactListener;
     b2Body *screenBorderBody;
+    
+    CCAction *taunt;
+    NSMutableArray *tauntingFrames;
 
 }
+-(id)init:(int)levelNum;
 +(id) scene;
 - (void)createBullets;
 

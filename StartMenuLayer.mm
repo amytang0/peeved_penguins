@@ -36,16 +36,30 @@
 	if (self)
 	{
         
-        CCMenuItemImage *menuBackground = [CCMenuItemImage itemWithNormalImage:@"menu-background-hd.png" selectedImage:@"menu-background-hd.png" target:self selector:nil];
+        CCSprite *sprite = [CCSprite spriteWithFile:@"menu-background.png"];
+        sprite.anchorPoint = CGPointZero;
+        [self addChild:sprite z:-1];
+
+               
+        CCMenuItemImage *menuPlayButton = [CCMenuItemImage itemWithNormalImage:@"button.png" selectedImage:@"button.png" target:self selector:@selector(playGame:)];
+        menuPlayButton.tag = 1; 
         
-        CCMenuItemImage *menuPlayButton = [CCMenuItemImage itemWithNormalImage:@"button-hd.png" selectedImage:@"button-hd.png" target:self selector:@selector(playGame:)];
+        CCLabelTTF *level1label = [CCLabelTTF labelWithString:@"Level 1" fontName:@"Georgia-Bold" fontSize:25];
+        CCLabelTTF *level2label = [CCLabelTTF labelWithString:@"Level 2" fontName:@"Georgia-Bold" fontSize:25];
         
+        CCMenuItemLabel *menuLevel1Button  = [CCMenuItemLabel itemWithLabel:level1label target:self selector:@selector(playGame:)];
+          menuLevel1Button.tag = 1; 
+        
+        CCMenuItemLabel *menuLevel2Button  = [CCMenuItemLabel itemWithLabel:level2label target:self selector:@selector(playGame:)];
+         menuLevel2Button.tag = 2; 
+
         
         // Create a menu and add your menu items to it
-        CCMenu * myMenu = [CCMenu menuWithItems:menuBackground, menuPlayButton, nil];
+        CCMenu * myMenu = [CCMenu menuWithItems:menuPlayButton, menuLevel1Button, menuLevel2Button, nil];
         
         // Arrange the menu items vertically
-        //[myMenu alignItemsVertically];
+        [myMenu alignItemsHorizontally];
+         myMenu.position = ccp(230, 90);
         
         // add the menu to your scene
         [self addChild:myMenu];
@@ -57,10 +71,11 @@
 	return self;
 }
 
--(void) playGame:(CCMenuItem *)sender
+-(void) playGame:(CCMenuItem *)sender 
 {
-        [[CCDirector sharedDirector] replaceScene: (CCScene*)[[GameLayer alloc] init]];
+    [[CCDirector sharedDirector] replaceScene: (CCScene*)[[GameLayer alloc] init:sender.tag]];
     NSLog(@"Play the game");
+
 }
 
 -(void) onEnter

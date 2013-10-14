@@ -8,6 +8,7 @@
 #import "GameLayer.h"
 
 #import "SimpleAudioEngine.h"
+#import "Seal.h"
 
 const float PTM_RATIO = 32.0f;
 #define FLOOR_HEIGHT    50.0f
@@ -31,7 +32,7 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
 @implementation GameLayer
 
 
--(id) init
+-(id) init:(int)levelNum
 {
 	if ((self = [super init]))
 	{
@@ -78,9 +79,32 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
         screenBorderShape.Set(upperLeftCorner, lowerLeftCorner);
         screenBorderBody->CreateFixture(&screenBorderShape, 0);
         
+        //Load the plist which tells Kobold2D how to properly parse your spritesheet. If on a retina device Kobold2D will automatically use bearframes-hd.plist
+        
+        [[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile: @"bearframes.plist"];
+        
+        //Load in the spritesheet, if retina Kobold2D will automatically use bearframes-hd.png
+        
+        CCSpriteBatchNode *spriteSheet = [CCSpriteBatchNode batchNodeWithFile:@"bearframes.png"];
+        
+        [self addChild:spriteSheet];
+        
+        //Define the frames based on the plist - note that for this to work, the original files must be in the format bear1, bear2, bear3 etc...
+        
+        //When it comes time to get art for your own original game, makegameswith.us will give you spritesheets that follow this convention, <spritename>1 <spritename>2 <spritename>3 etc...
+        
+        tauntingFrames = [NSMutableArray array];
+        
+        for(int i = 1; i <= 7; ++i)
+        {
+            [tauntingFrames addObject:
+             [[CCSpriteFrameCache sharedSpriteFrameCache] spriteFrameByName: [NSString stringWithFormat:@"bear%d.png", i]]];
+        }
+        
         
         //Add all the sprites to the game, including blocks and the catapult. It's tedious...
         //See the storing game data tutorial to learn how to abstract all of this out to a plist file
+        
         
         CCSprite *sprite = [CCSprite spriteWithFile:@"background.png"];
         sprite.anchorPoint = CGPointZero;
@@ -91,15 +115,74 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
         sprite.position = CGPointMake(135.0f, FLOOR_HEIGHT);
         [self addChild:sprite z:0];
         
+ 
+        
+        /*
         sprite = [CCSprite spriteWithFile:@"bear.png"];
         sprite.anchorPoint = CGPointZero;
         sprite.position = CGPointMake(50.0f, FLOOR_HEIGHT);
         [self addChild:sprite z:0];
+         */
+        
+        //Initialize the bear with the first frame you loaded from your spritesheet, bear1
+        
+        sprite = [CCSprite spriteWithSpriteFrameName:@"bear1.png"];
+        
+        sprite.anchorPoint = CGPointZero;
+        sprite.position = CGPointMake(50.0f, FLOOR_HEIGHT);
+        
+        //Create an animation from the set of frames you created earlier
+        
+        CCAnimation *taunting = [CCAnimation animationWithFrames: tauntingFrames delay:0.5f];
+        
+        //Create an action with the animation that can then be assigned to a sprite
+        
+        taunt = [CCRepeatForever actionWithAction: [CCAnimate actionWithAnimation:taunting restoreOriginalFrame:NO]];
+        
+        //tell the bear to run the taunting action
+        [sprite runAction:taunt];
+        
+        [self addChild:sprite z:0];
+        
             
         sprite = [CCSprite spriteWithFile:@"ground.png"];
         sprite.anchorPoint = CGPointZero;
         [self addChild:sprite z:10];
         
+        NSLog(@"Murur!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! %d", levelNum);
+        NSString *path;
+        if (levelNum == 1) {
+         path = [[NSBundle mainBundle] pathForResource:@"level1" ofType:@"plist"];
+        } else if (levelNum == 2) {
+            path = [[NSBundle mainBundle] pathForResource:@"level2" ofType:@"plist"];
+        }
+        path = [[NSBundle mainBundle] pathForResource:@"level1" ofType:@"plist"];
+
+            NSLog(@"path is %@",path);    
+        
+  
+        NSDictionary *level = [NSDictionary dictionaryWithContentsOfFile:path];
+
+        if (level == nil){
+            NSLog(@"level is nil");
+        }
+        
+        NSArray *levelblocks = [level objectForKey:@"Blocks"];
+        NSLog(@"Is null? %@", [levelblocks componentsJoinedByString: @"|"]);
+        for (NSDictionary* block in levelblocks) {
+            NSString* imgname =[(NSString*)[block objectForKey:@"spriteName"] stringByAppendingString: @".png"];
+             sprite = [CCSprite spriteWithFile:imgname];
+            float x = [[block objectForKey:@"x"] floatValue];
+            float y = [[block objectForKey:@"y"] floatValue];
+            sprite.position = CGPointMake(y, FLOOR_HEIGHT + x);
+            [blocks addObject:sprite];
+            [self addChild:sprite z:7];
+            NSLog(@"BUILT A BLOCK %@",imgname);
+            
+        }
+        
+                NSLog(@"blocks content %@", [blocks componentsJoinedByString: @"|"]);
+        /*
         sprite = [CCSprite spriteWithFile:@"tallblock.png"];
         sprite.position = CGPointMake(675.0f, FLOOR_HEIGHT + 28.0f);
         [blocks addObject:sprite];
@@ -114,18 +197,15 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
         [blocks addObject:sprite];
         [self addChild:sprite z:7];
         
+        */
         
-        sprite = [CCSprite spriteWithFile:@"seal.png"];
-        sprite.position = CGPointMake(680.0f, FLOOR_HEIGHT + 72.0f);
-        [blocks addObject:sprite];
-        [self addChild:sprite z:7];
-        sprite = [CCSprite spriteWithFile:@"seal.png"];
-        sprite.position = CGPointMake(740.0f, FLOOR_HEIGHT + 72.0f);
-        [blocks addObject:sprite];
-        [self addChild:sprite z:7];
+        Seal *seal = [[Seal alloc] initWithSealImage];
+        seal.position = CGPointMake(680.0f, FLOOR_HEIGHT + 72.0f);
+        [blocks addObject:seal];
+        [self addChild:seal z:7];
         
         
-        
+        /*
         sprite = [CCSprite spriteWithFile:@"tallblock.png"];
         sprite.position = CGPointMake(854.0f, FLOOR_HEIGHT + 28.0f);
         [blocks addObject:sprite];
@@ -138,6 +218,7 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
         sprite.position = CGPointMake(854.0f, FLOOR_HEIGHT + 26.0f + 46.0f + 46.0f);
         [blocks addObject:sprite];
         [self addChild:sprite z:7];
+        */
 		
         
         CCSprite *arm = [CCSprite spriteWithFile:@"catapultarm.png"];
@@ -184,12 +265,30 @@ NSMutableArray *blocks = [[NSMutableArray alloc] init];
                     //check if their y coordinates are within the height of the block
                     if(projectile.position.y < (block.position.y + 23.0f) && projectile.position.y > block.position.y - 23.0f)
                     {
-                        [self removeChild:block cleanup:YES];
-                        [self removeChild:projectile cleanup:YES];
-                        [blocks removeObjectAtIndex:second];
-                        [bullets removeObjectAtIndex:first];
+                        if([block isKindOfClass:[Seal class]]) {
+                            
+                            //the program doesn't know that the block is actually a Seal object; we must cast it to a seal
+                            if (((Seal*)block).health==1)
+                            {
+                                [self removeChild:block cleanup:YES];
+                                [self removeChild:projectile cleanup:YES];
+                                [blocks removeObjectAtIndex:second];
+                                [bullets removeObjectAtIndex:first];
+                            }
+                            else
+                            {
+                                ((Seal*)block).health--;
+                                [self removeChild:projectile cleanup:YES];
+                                [bullets removeObjectAtIndex:first];
+                            }
+                        } else {
+                            [self removeChild:block cleanup:YES];
+                            [self removeChild:projectile cleanup:YES];
+                            [blocks removeObjectAtIndex:second];
+                            [bullets removeObjectAtIndex:first];
+                            
+                        }
                         [[SimpleAudioEngine sharedEngine] playEffect:@"explo2.wav"];
-                        
                     }
                 }
             }

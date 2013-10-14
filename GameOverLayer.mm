@@ -8,6 +8,8 @@
 
 #import "GameOverLayer.h"
 
+#import "StartMenuLayer.h"
+
 @interface GameOverLayer (PrivateMethods)
 // declare private methods here
 @end
@@ -54,7 +56,7 @@
 -(void) showStartScreen:(CCMenuItem *)sender{
         NSLog(@"Show start screen");
     
-    [[CCDirector sharedDirector] replaceScene: (CCScene*)[[StartScreenLayer alloc] init]];
+    [[CCDirector sharedDirector] replaceScene: (CCScene*)[[StartMenuLayer alloc] init]];
     
 }
 
